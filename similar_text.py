@@ -11,18 +11,13 @@ def removeStopWords(wordList):
     cleanedList = [word for word in wordList if word not in stopWords]
     return cleanedList
 
-def sentenceToPOS(sentence):
-    """ takes a spaCy sentence (object) and returns:
-        * lemma sentence    (str)
-        * words             (str list) 
-    """
-    lemmaSent = ""
+def sentenceToWords(sentence):
+    """ takes a spaCy sentence (object) and returns a list of lemma words (str list) """
     wordList = []
     for token in sentence:
         if token.lemma_ not in string.punctuation:
             wordList += [token.lemma_.strip('\n')]
-            lemmaSent = lemmaSent + token.lemma_.strip('\n') + " "
-    return lemmaSent, wordList
+    return wordList
 
 def getJaccardSim(A, B): 
     """ computes Jaccard Similarity between word groups A and B """
@@ -32,8 +27,7 @@ def getJaccardSim(A, B):
         return float(len(setA & setB) / len(setA | setB))
     except:
         return 0.0
-
-
+        
 
     
 # gets statement and article as strings
@@ -57,7 +51,7 @@ jaccardNoStopsList = []
 jaccardSubjsList = []
 for sentence in docArticle.sents:
     # computes jaccard score for word lemmas
-    artLemma, artWords = sentenceToPOS(sentence)
+    artWords = sentenceToWords(sentence)
     jaccardScore = getJaccardSim(statementWords, artWords)
     jaccardScoreList += [jaccardScore]
     # computes jaccard score for word lemmas with no stop words
@@ -68,7 +62,7 @@ for sentence in docArticle.sents:
     jaccardSubjs = getJaccardSim(statementSubjs, artWords)
     jaccardSubjsList += [jaccardSubjs]
     # stores the lemma sentence
-    artlemmaList += [artLemma]
+    artlemmaList += [artWords]
 
     
 
