@@ -15,18 +15,14 @@ def sentenceToPOS(sentence):
     """ takes a spaCy sentence (object) and returns:
         * lemma sentence    (str)
         * words             (str list) 
-        * subjects          (str list)
     """
     lemmaSent = ""
     wordList = []
-    subjList = []
     for token in sentence:
-        lemmaSent = lemmaSent + " " + token.lemma_
         if token.lemma_ not in string.punctuation:
-            wordList += [token.lemma_]
-        if token.dep_ == "nsubj":
-            subjList += [token.lemma_]
-    return lemmaSent, wordList, subjList
+            wordList += [token.lemma_.strip('\n')]
+            lemmaSent = lemmaSent + token.lemma_.strip('\n') + " "
+    return lemmaSent, wordList
 
 def getJaccardSim(A, B): 
     """ computes Jaccard Similarity between word groups A and B """
@@ -55,12 +51,13 @@ statementWords = [token.lemma_ for token in docStatement if token.lemma_ not in 
 statementSubjs = [token.lemma_ for token in docStatement if token.dep_ == "nsubj"]
 print("statement subjs: ", statementSubjs)
 statementNoStops = removeStopWords(statementWords)
+artlemmaList = []
 jaccardScoreList = []
 jaccardNoStopsList = []
 jaccardSubjsList = []
 for sentence in docArticle.sents:
     # computes jaccard score for word lemmas
-    artLemma, artWords, artSubjs = sentenceToPOS(sentence)
+    artLemma, artWords = sentenceToPOS(sentence)
     jaccardScore = getJaccardSim(statementWords, artWords)
     jaccardScoreList += [jaccardScore]
     # computes jaccard score for word lemmas with no stop words
@@ -70,19 +67,16 @@ for sentence in docArticle.sents:
     # computes jaccard score for subject
     jaccardSubjs = getJaccardSim(statementSubjs, artWords)
     jaccardSubjsList += [jaccardSubjs]
+    # stores the lemma sentence
+    artlemmaList += [artLemma]
 
-    # print(artLemma, "*** ", artSubjs, " ***\n")
     
 
-threeMostSimilarSents = sorted(zip(jaccardScoreList, list(docArticle.sents)), reverse=True)[:3]
-threeMostSimilarNoStops = sorted(zip(jaccardNoStopsList, list(docArticle.sents)), reverse=True)[:3]
-threeMostSimilarSubjs = sorted(zip(jaccardSubjsList, list(docArticle.sents)), reverse=True)[:3]
+threeMostSimilarSents = sorted(zip(jaccardScoreList, artlemmaList), reverse=True)[:3]
+threeMostSimilarNoStops = sorted(zip(jaccardNoStopsList, artlemmaList), reverse=True)[:3]
+threeMostSimilarSubjs = sorted(zip(jaccardSubjsList, artlemmaList), reverse=True)[:3]
 
 
 print("straight:\n", threeMostSimilarSents, "\n")
 print("No Stops:\n", threeMostSimilarNoStops, "\n")
 print("Subject:\n", threeMostSimilarSubjs, "\n")
-
-
-
-
