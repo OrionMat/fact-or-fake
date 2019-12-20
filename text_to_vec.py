@@ -10,7 +10,6 @@ nlp = spacy.load("en_core_web_sm")
 sentiment_analyzer = SentimentIntensityAnalyzer()
 word_ID_counter = 0
 english_words = set(corpus_words.words())
-
 word_ID_dict = {}
 POS_tag_dict = {"NOUN" : 1, "PROPN" : 1, "PRON" : 1,
                 "VERB" : 2, "ADV" : 2, "AUX" : 2,
@@ -56,20 +55,20 @@ def check_prefix_negation(word, word_sentiment):
     for prefix in negation_prefixes:
         if word.startswith(prefix):
             fix_word = word[len(prefix):]
-            # antonym check
             if fix_word in english_words:
+                # antonym check
                 for synset in wordnet.synsets(fix_word):
                     for lemma in synset.lemmas():
                         if lemma.antonyms():
                             antonym = lemma.antonyms()[0].name()
                             if antonym == word:
                                 return True
-            # sentiment check
-            sentiment_dict = sentiment_analyzer.polarity_scores(fix_word)
-            fix_sentiment = sentiment_dict['compound']
-            if word_sentiment != 0 and fix_sentiment != 0:
-                if word_sentiment * fix_sentiment < 0.0:
-                    return True
+                # sentiment check
+                sentiment_dict = sentiment_analyzer.polarity_scores(fix_word)
+                fix_sentiment = sentiment_dict['compound']
+                if word_sentiment != 0 and fix_sentiment != 0:
+                    if word_sentiment * fix_sentiment < 0.0:
+                        return True
     return False
 
 def to_base_vector(token, word_ID_dict, external_negation):
