@@ -8,26 +8,21 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 nlp = spacy.load("en_core_web_sm")
 sentiment_analyzer = SentimentIntensityAnalyzer()
-
 word_ID_counter = 0
 english_words = set(corpus_words.words())
 
 word_ID_dict = {}
-
 POS_tag_dict = {"NOUN" : 1, "PROPN" : 1, "PRON" : 1,
                 "VERB" : 2, "ADV" : 2, "AUX" : 2,
                 "ADJ" : 3, "NUM" : 4, "DET" : 5, "ADP" : 6,
                 "CONJ" : 7, "CCONJ" : 7, "SCONJ" : 7, 
                 "INTJ" : 8, "SYM" : 9}
-
 entity_type_dict = {"DATE" : 1, "TIME" : 1, 
                     "PERCENT" : 2, "MONEY" : 2, "QUANTITY" : 2, 
                     "ORDINAL" : 2, "CARDINAL" : 2}
-
 dependency_dict = {"nsubj" : 1, "pobj" : 2, "amod" : 3, 
                    "det" : 4, "ROOT" : 5, "prep" : 6, 
                    "advmod" : 7, "advcl" : 8}
-
 negation_prefixes = ["a", "dis", "il", "im", "in", "ir", "non", 
                      "un", "mis", "mal", "anti", "de", "under",
                      "semi", "mini", "ex", "sub", "infra"] 
@@ -150,12 +145,7 @@ def to_base_vector(token, word_ID_dict, external_negation):
 
     return [word_ID, POS_ID, entity_ID, dep_ID], sentiment, is_negated
 
-
-
-
-
-
-doc = nlp(""" trumplike untrumplike unimportant important agree disagree comfort discomfort legal illegal legible illegible mobile immobile moral immoral
+doc = nlp(""" unimportant important agree disagree comfort discomfort legal illegal legible illegible mobile immobile moral immoral
         3 killed in car crash 
         Three men were killed in a horrific car crash early saturday morning.
         Three army soldiers have been killed in a highway accident early saturday morning on highway 24 in San Francisco when their red 2009 Nissan Versa slammed into a tree, according to the California Highway Patrol.""")
