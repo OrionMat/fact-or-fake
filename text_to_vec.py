@@ -6,25 +6,33 @@ from nltk.corpus import wordnet
 import spacy
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load('en_core_web_sm')
 sentiment_analyzer = SentimentIntensityAnalyzer()
 word_ID_counter = 0
 english_words = set(corpus_words.words())
 word_ID_dict = {}
-POS_tag_dict = {"NOUN" : 1, "PROPN" : 1, "PRON" : 1,
-                "VERB" : 2, "ADV" : 2, "AUX" : 2,
-                "ADJ" : 3, "NUM" : 4, "DET" : 5, "ADP" : 6,
-                "CONJ" : 7, "CCONJ" : 7, "SCONJ" : 7, 
-                "INTJ" : 8, "SYM" : 9}
-entity_type_dict = {"DATE" : 1, "TIME" : 1, 
-                    "PERCENT" : 2, "MONEY" : 2, "QUANTITY" : 2, 
-                    "ORDINAL" : 2, "CARDINAL" : 2}
-dependency_dict = {"nsubj" : 1, "pobj" : 2, "amod" : 3, 
-                   "det" : 4, "ROOT" : 5, "prep" : 6, 
-                   "advmod" : 7, "advcl" : 8}
-negation_prefixes = ["a", "dis", "il", "im", "in", "ir", "non", 
-                     "un", "mis", "mal", "anti", "de", "under",
-                     "semi", "mini", "ex", "sub", "infra"] 
+POS_tag_dict = {'NOUN' : 1, 'PROPN' : 1, 'PRON' : 1,
+                'VERB' : 2, 'ADV' : 2, 'AUX' : 2,
+                'ADJ' : 3, 'NUM' : 4, 'DET' : 5, 'ADP' : 6,
+                'CONJ' : 7, 'CCONJ' : 7, 'SCONJ' : 7, 
+                'INTJ' : 8, 'SYM' : 9}
+entity_type_dict = {'DATE' : 1, 'TIME' : 1, 
+                    'PERCENT' : 2, 'MONEY' : 2, 'QUANTITY' : 2, 
+                    'ORDINAL' : 2, 'CARDINAL' : 2}
+dependency_dict = {'nsubj' : 1, 'pobj' : 2, 'amod' : 3, 
+                   'det' : 4, 'ROOT' : 5, 'prep' : 6, 
+                   'advmod' : 7, 'advcl' : 8}
+negation_prefixes = ['a', 'ab', 'an', 'anti', 'de', 'dis', 'ex', 
+                     'ig', 'il', 'im', 'in', 'infra', 'ir', 'mal', 
+                     'mini', 'mis', 'non', 'semi', 'sub', 'un', 'under'] 
+negation_words = {'aint', 'arent', 'barely', 'cannot', 'cant', 'couldnt', 'darent', 
+                  'despite', 'didnt', 'doesnt', 'dont', 'hadnt', 'hardly', 'hasnt', 
+                  'havent', 'isnt', 'mightnt', 'mustnt', 'neednt', 
+                  'neither', 'never', 'nil', 'no', 'nobody', 'non', 'none', 
+                  'nope', 'nor', 'not', 'nothing', 'nowhere', 'oughtnt', 
+                  'rarely', 'refuse', 'reject', 'retract', 'scarcely', 'seldom', 'shant', 
+                  'shouldnt', 'subside', 'uh-uh', 'uhuh', 'wasnt', 'werent', 
+                  'without', 'withoutdeny', 'wont', 'wouldnt'}
 
 def remove_stop_words(wordList):
     """ takes a word list (str) and removes any stop words """
@@ -62,16 +70,22 @@ def check_prefix_negation(word, word_sentiment):
                         if lemma.antonyms():
                             antonym = lemma.antonyms()[0].name()
                             if antonym == word:
-                                return True
+                                return 1
                 # sentiment check
                 sentiment_dict = sentiment_analyzer.polarity_scores(fix_word)
                 fix_sentiment = sentiment_dict['compound']
                 if word_sentiment != 0 and fix_sentiment != 0:
                     if word_sentiment * fix_sentiment < 0.0:
-                        return True
-    return False
+                        return 1
+    return 0
 
-def to_base_vector(token, word_ID_dict, external_negation):
+def check_negation_word(word_lemma):
+    if word_lemma in negation_words:
+        return 1
+    else:
+        return 0
+
+def to_base_vector(token, word_ID_dict):
     """ inputs are: 
         * spaCy token (object)
         * word IDs (dict)
@@ -86,7 +100,8 @@ def to_base_vector(token, word_ID_dict, external_negation):
     """
 
     global word_ID_counter
-    is_negated = None
+    self_negation = None
+    is_negation_word = None
     word_ID = None
     POS_ID = None
     entity_ID = None
@@ -136,17 +151,19 @@ def to_base_vector(token, word_ID_dict, external_negation):
     sentiment_dict = sentiment_analyzer.polarity_scores(lemma)
     sentiment = sentiment_dict['compound']
 
-    # handle negation
-    if external_negation: 
-        is_negated = True
-    else:
-        is_negated = check_prefix_negation(lemma, sentiment)
+    # handle internal negation
+    self_negation = check_prefix_negation(lemma, sentiment)
 
-    return [word_ID, POS_ID, entity_ID, dep_ID], sentiment, is_negated
+    # handel case where word is nation word
+    is_negation_word = check_negation_word(lemma)
 
-doc = nlp(""" unimportant important agree disagree comfort discomfort legal illegal legible illegible mobile immobile moral immoral
+    return [word_ID, POS_ID, entity_ID, dep_ID, sentiment, self_negation, is_negation_word]
+
+doc = nlp(""" Scarcely Barely barely kjashd
+        couldn't can't aren't ain't isn't didn't won't 'wouldn't
+        unimportant important agree disagree comfort discomfort legal illegal legible illegible mobile immobile moral immoral
         3 killed in car crash 
         Three men were killed in a horrific car crash early saturday morning.
         Three army soldiers have been killed in a highway accident early saturday morning on highway 24 in San Francisco when their red 2009 Nissan Versa slammed into a tree, according to the California Highway Patrol.""")
 for token in doc:
-    print("{:-<10} {}, {}".format(token.lemma_, " --> ", to_base_vector(token, word_ID_dict, False)))
+    print("{:-<10} {}, {}".format(token.lemma_, " --> ", to_base_vector(token, word_ID_dict)))
