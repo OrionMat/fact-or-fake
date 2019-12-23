@@ -6,7 +6,7 @@ from nltk.corpus import wordnet
 import spacy
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-nlp = spacy.load('en_core_web_sm')
+nlp = spacy.load('en_core_web_lg')
 sentiment_analyzer = SentimentIntensityAnalyzer()
 word_ID_counter = 0
 english_words = set(corpus_words.words())
@@ -79,12 +79,6 @@ def check_prefix_negation(word, word_sentiment):
                         return 1
     return 0
 
-def check_negation_word(word_lemma):
-    if word_lemma in negation_words:
-        return 1
-    else:
-        return 0
-
 def to_base_vector(token, word_ID_dict):
     """ inputs are: 
         * spaCy token (object)
@@ -155,7 +149,10 @@ def to_base_vector(token, word_ID_dict):
     self_negation = check_prefix_negation(lemma, sentiment)
 
     # handel case where word is nation word
-    is_negation_word = check_negation_word(lemma)
+    if lemma in negation_words:
+        is_negation_word = 1
+    else:
+        is_negation_word = 0
 
     return [word_ID, POS_ID, entity_ID, dep_ID, sentiment, self_negation, is_negation_word]
 
@@ -167,3 +164,5 @@ doc = nlp(""" Scarcely Barely barely kjashd
         Three army soldiers have been killed in a highway accident early saturday morning on highway 24 in San Francisco when their red 2009 Nissan Versa slammed into a tree, according to the California Highway Patrol.""")
 for token in doc:
     print("{:-<10} {}, {}".format(token.lemma_, " --> ", to_base_vector(token, word_ID_dict)))
+    print("{:-<10} {}, {}, {}".format(token.lemma_, " --> ", len(token.vector), token.vector[0:5]))
+    print('\n')
