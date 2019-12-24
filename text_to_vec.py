@@ -36,20 +36,20 @@ negation_words = {'aint', 'arent', 'barely', 'cannot', 'cant', 'couldnt', 'daren
                   'shouldnt', 'subside', 'uh-uh', 'uhuh', 'wasnt', 'werent', 
                   'without', 'withoutdeny', 'wont', 'wouldnt'}
 
-def remove_stop_words(wordList):
+def load_text_data(statement_file, article_file):
+    """ reads statement and article into strings from their text files """
+    with open(statement_file, encoding='utf-8') as f:
+        statement = f.read()
+    with open(article_file, encoding='utf-8') as f:
+        article = f.read()
+    return statement, article
+
+def remove_stop_words(word_list):
     """ takes a word list (str) and removes any stop words """
     with open('stop_words.txt') as f:
-        stopWords = [line.rstrip('\n') for line in f]
-    cleanedList = [word for word in wordList if word not in stopWords]
-    return cleanedList
-
-def to_words_lemmas(doc):
-    """ takes a spaCy (object) and returns a list of lemma words (str list) minus punctuation """
-    wordList = []
-    for token in doc:
-        if token.lemma_ not in string.punctuation:
-            wordList += [token.lemma_.strip('\n')]
-    return wordList
+        stop_words = [line.rstrip('\n') for line in f]
+    cleaned_list = [word for word in word_list if word not in stop_words]
+    return cleaned_list
 
 def jaccard_simularity(A, B): 
     """ computes Jaccard Similarity between word groups A and B """
@@ -59,6 +59,44 @@ def jaccard_simularity(A, B):
         return float(len(setA & setB) / len(setA | setB))
     except:
         return 0.0
+
+def to_word_lemmas(sentence):
+    """ takes a spaCy sentence (object) and returns a list of lemma words (str list)
+        * list contains no punctuation or new lines """
+    word_list = []
+    for token in sentence:
+        if token.lemma_ not in string.punctuation:
+            word_list += [token.lemma_.strip('\n')]
+            word_list = list(filter(None, word_list))
+    return word_list
+
+def get_similar_sentences(doc_statement, doc_article):
+    """ gets articles three most similar sentences to statment (lemmatized -> jaccard score) """
+
+    statement_words = to_word_lemmas(doc_statement)
+    statement_no_stops = remove_stop_words(statement_words)
+    article_lemma_sentences = []
+    jaccard_score_list = []
+    jaccard_no_stops_list = []
+
+    for sentence in doc_article.sents:
+        article_words = to_word_lemmas(sentence)
+        article_no_Stops = remove_stop_words(article_words)
+        article_lemma_sentences += [article_words]
+        # computes jaccard score for word lemmas
+        jaccard_score = jaccard_simularity(statement_words, article_words)
+        jaccard_score_list += [jaccard_score]
+        # computes jaccard score for word lemmas with no stop words
+        jaccard_no_stops = jaccard_simularity(statement_no_stops, article_no_Stops)
+        jaccard_no_stops_list += [jaccard_no_stops]
+
+    five_most_similar_raw = sorted(zip(jaccard_score_list, article_lemma_sentences), reverse=True)[:5]
+    five_most_similar_no_stops = sorted(zip(jaccard_no_stops_list, article_lemma_sentences), reverse=True)[:5]
+
+    for idx in range(5):
+        print("raw ", idx, ": ", five_most_similar_raw[idx])
+        print("no stops ", idx, ": ", five_most_similar_no_stops[idx])
+        print('\n')
 
 def check_prefix_negation(word, word_sentiment):
     """ checks internal negation from prefixes """
@@ -161,12 +199,20 @@ def word_to_vector(token, word_ID_dict):
     word_array = np.concatenate((base_array, standard_array), axis=0)
     return word_array
 
-doc = nlp(""" Scarcely Barely barely kjashd
-        couldn't can't aren't ain't isn't didn't won't 'wouldn't
-        unimportant important agree disagree comfort discomfort legal illegal legible illegible mobile immobile moral immoral
-        3 killed in car crash 
-        Three men were killed in a horrific car crash early saturday morning.
-        Three army soldiers have been killed in a highway accident early saturday morning on highway 24 in San Francisco when their red 2009 Nissan Versa slammed into a tree, according to the California Highway Patrol.""")
-for token in doc:
-    vector = word_to_vector(token, word_ID_dict)
-    print("{:-<10} {} {} {} {}".format(token.lemma_, " --> ", vector[0:3], " shape: ", vector.shape))
+# get statement and article and process them with spacy
+statement, article = load_text_data('test_statement.txt', 'test_article.txt')
+doc_statement = nlp(statement)
+doc_article = nlp(article)
+
+#  get article's five most similar sentences to statement
+five_similar_sentences = get_similar_sentences(doc_statement, doc_article)
+
+# doc = nlp(""" Scarcely Barely barely kjashd
+#         couldn't can't aren't ain't isn't didn't won't 'wouldn't
+#         unimportant important agree disagree comfort discomfort legal illegal legible illegible mobile immobile moral immoral
+#         3 killed in car crash 
+#         Three men were killed in a horrific car crash early saturday morning.
+#         Three army soldiers have been killed in a highway accident early saturday morning on highway 24 in San Francisco when their red 2009 Nissan Versa slammed into a tree, according to the California Highway Patrol.""")
+# for token in doc:
+#     vector = word_to_vector(token, word_ID_dict)
+#     print("{:-<10} {} {} {} {}".format(token.lemma_, " --> ", vector[0:3], " shape: ", vector.shape))
