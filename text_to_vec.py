@@ -1,4 +1,5 @@
 import string
+import numpy as np
 from word2number import w2n
 import nltk
 from nltk.corpus import words as corpus_words
@@ -8,6 +9,7 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 nlp = spacy.load('en_core_web_lg')
 sentiment_analyzer = SentimentIntensityAnalyzer()
+max_words_in_sentence = 50
 word_ID_counter = 0
 english_words = set(corpus_words.words())
 word_ID_dict = {}
@@ -79,7 +81,7 @@ def check_prefix_negation(word, word_sentiment):
                         return 1
     return 0
 
-def to_base_vector(token, word_ID_dict):
+def word_to_vector(token, word_ID_dict):
     """ inputs are: 
         * spaCy token (object)
         * word IDs (dict)
@@ -154,7 +156,10 @@ def to_base_vector(token, word_ID_dict):
     else:
         is_negation_word = 0
 
-    return [word_ID, POS_ID, entity_ID, dep_ID, sentiment, self_negation, is_negation_word]
+    base_array = np.array([word_ID, POS_ID, entity_ID, dep_ID, sentiment, self_negation, is_negation_word])
+    standard_array = token.vector
+    word_array = np.concatenate((base_array, standard_array), axis=0)
+    return word_array
 
 doc = nlp(""" Scarcely Barely barely kjashd
         couldn't can't aren't ain't isn't didn't won't 'wouldn't
@@ -163,6 +168,5 @@ doc = nlp(""" Scarcely Barely barely kjashd
         Three men were killed in a horrific car crash early saturday morning.
         Three army soldiers have been killed in a highway accident early saturday morning on highway 24 in San Francisco when their red 2009 Nissan Versa slammed into a tree, according to the California Highway Patrol.""")
 for token in doc:
-    print("{:-<10} {}, {}".format(token.lemma_, " --> ", to_base_vector(token, word_ID_dict)))
-    print("{:-<10} {}, {}, {}".format(token.lemma_, " --> ", len(token.vector), token.vector[0:5]))
-    print('\n')
+    vector = word_to_vector(token, word_ID_dict)
+    print("{:-<10} {} {} {} {}".format(token.lemma_, " --> ", vector[0:3], " shape: ", vector.shape))
