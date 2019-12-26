@@ -70,7 +70,12 @@ def to_word_lemmas(sentence):
             word_list = list(filter(None, word_list))
     return word_list
 
-def jaccard_similar_sentences(doc_statement, doc_article):
+def get_similar_sentences(doc_statement, doc_article):
+    """ gets articles five most similar sentences to statement 
+        1: lemmatized -> jaccard score
+                      -> remove stop words -> jaccard score
+        2: Universal Sentence Encoder similarity
+        weights similar sentences to get a compound similarity score"""
 
     statement_words = to_word_lemmas(doc_statement)
     statement_no_stops = remove_stop_words(statement_words)
@@ -92,20 +97,11 @@ def jaccard_similar_sentences(doc_statement, doc_article):
     five_most_similar_raw = sorted(zip(jaccard_score_list, article_lemma_sentences), reverse=True)[:5]
     five_most_similar_no_stops = sorted(zip(jaccard_no_stops_list, article_lemma_sentences), reverse=True)[:5]
 
+    print("jaccard similar sentences:")
     for idx in range(5):
         print("raw ", idx, ": ", five_most_similar_raw[idx])
         print("no stops ", idx, ": ", five_most_similar_no_stops[idx])
-        print('\n')
 
-    return five_most_similar_raw, five_most_similar_no_stops
-
-def get_similar_sentences(doc_statement, doc_article):
-    """ gets articles five most similar sentences to statement 
-        1: lemmatized -> jaccard score
-        2: Universal Sentence Encoder 
-        weights similar sentences to get a compound similarity score"""
-
-    five_most_similar_raw, five_most_similar_no_stops = jaccard_similar_sentences(doc_statement, doc_article)
 
 
 def check_prefix_negation(word, word_sentiment):
