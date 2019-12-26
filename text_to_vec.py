@@ -6,8 +6,10 @@ from nltk.corpus import words as corpus_words
 from nltk.corpus import wordnet 
 import spacy
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import tensorflow_hub as hub
 
 nlp = spacy.load('en_core_web_lg')
+embed = hub.load("C:\\Users\\orion\\Documents\\Python programming\\Text Abstraction and Simplification\\USE_model")
 sentiment_analyzer = SentimentIntensityAnalyzer()
 max_words_in_sentence = 50
 word_ID_counter = 0
@@ -70,6 +72,13 @@ def to_word_lemmas(sentence):
             word_list = list(filter(None, word_list))
     return word_list
 
+def USE_similarity(statement_embedding, article_sentence):
+    """ gets the sentence similarity using Universal Sentence Encoder embeddings """
+
+    article_embedding = embed([article_sentence])
+    correlation = np.inner(statement_embedding, article_embedding)
+    return correlation[0][0]
+
 def get_similar_sentences(doc_statement, doc_article):
     """ gets articles five most similar sentences to statement 
         1: lemmatized -> jaccard score
@@ -77,11 +86,13 @@ def get_similar_sentences(doc_statement, doc_article):
         2: Universal Sentence Encoder similarity
         weights similar sentences to get a compound similarity score"""
 
+    statement_embedding = embed([doc_statement.text])
     statement_words = to_word_lemmas(doc_statement)
     statement_no_stops = remove_stop_words(statement_words)
     article_lemma_sentences = []
     jaccard_score_list = []
     jaccard_no_stops_list = []
+    USE_score_list = []
 
     for sentence in doc_article.sents:
         article_words = to_word_lemmas(sentence)
@@ -94,14 +105,20 @@ def get_similar_sentences(doc_statement, doc_article):
         jaccard_no_stops = jaccard_similarity(statement_no_stops, article_no_Stops)
         jaccard_no_stops_list += [jaccard_no_stops]
         # computes USE similarity
+        USE_score = USE_similarity(statement_embedding, sentence.text)
+        USE_score_list += [USE_score]
 
     five_most_similar_raw = sorted(zip(jaccard_score_list, article_lemma_sentences), reverse=True)[:5]
     five_most_similar_no_stops = sorted(zip(jaccard_no_stops_list, article_lemma_sentences), reverse=True)[:5]
+    five_most_similar_USE = sorted(zip(USE_score_list, article_lemma_sentences), reverse=True)[:5]
 
     print("jaccard similar sentences:")
     for idx in range(5):
         print("raw ", idx, ": ", five_most_similar_raw[idx])
         print("no stops ", idx, ": ", five_most_similar_no_stops[idx])
+        print("USE ", idx, ": ", five_most_similar_USE[idx])
+        print('\n')
+
 
 
 
