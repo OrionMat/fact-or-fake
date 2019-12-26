@@ -107,7 +107,8 @@ def get_similar_sentences(doc_statement, doc_article):
         USE_score_list += [USE_score]
 
     compound_scores = np.sum([jaccard_score_list, jaccard_no_stops_list, USE_score_list], axis=0)
-    five_most_similar = sorted(zip(list(compound_scores), doc_article.sents), reverse=True)[:5]
+    five_most_similar_zip = sorted(zip(list(compound_scores), doc_article.sents), reverse=True)[:5]
+    _, five_most_similar = zip(*five_most_similar_zip)
     return five_most_similar
 
 def check_prefix_negation(word, word_sentiment):
@@ -219,13 +220,9 @@ doc_article = nlp(article)
 #  get article's five most similar sentences to statement
 five_similar_sentences = get_similar_sentences(doc_statement, doc_article)
 print("5 similar: ", five_similar_sentences)
-
-# doc = nlp(""" Scarcely Barely barely kjashd
-#         couldn't can't aren't ain't isn't didn't won't 'wouldn't
-#         unimportant important agree disagree comfort discomfort legal illegal legible illegible mobile immobile moral immoral
-#         3 killed in car crash 
-#         Three men were killed in a horrific car crash early saturday morning.
-#         Three army soldiers have been killed in a highway accident early saturday morning on highway 24 in San Francisco when their red 2009 Nissan Versa slammed into a tree, according to the California Highway Patrol.""")
-# for token in doc:
-#     vector = word_to_vector(token, word_ID_dict)
-#     print("{:-<10} {} {} {} {}".format(token.lemma_, " --> ", vector[0:3], " shape: ", vector.shape))
+    
+for sentence in five_similar_sentences:
+    doc = nlp(sentence.text.strip())
+    for token in doc:
+        vector = word_to_vector(token, word_ID_dict)
+        print("{:-<10} {} {} {} {}".format(token.lemma_, " --> ", vector[0:3], " shape: ", vector.shape))
