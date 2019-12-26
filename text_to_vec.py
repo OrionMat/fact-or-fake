@@ -51,7 +51,7 @@ def remove_stop_words(word_list):
     cleaned_list = [word for word in word_list if word not in stop_words]
     return cleaned_list
 
-def jaccard_simularity(A, B): 
+def jaccard_similarity(A, B): 
     """ computes Jaccard Similarity between word groups A and B """
     try:
         setA = set(A)
@@ -88,11 +88,12 @@ def get_similar_sentences(doc_statement, doc_article):
         article_no_Stops = remove_stop_words(article_words)
         article_lemma_sentences += [article_words]
         # computes jaccard score for word lemmas
-        jaccard_score = jaccard_simularity(statement_words, article_words)
+        jaccard_score = jaccard_similarity(statement_words, article_words)
         jaccard_score_list += [jaccard_score]
         # computes jaccard score for word lemmas with no stop words
-        jaccard_no_stops = jaccard_simularity(statement_no_stops, article_no_Stops)
+        jaccard_no_stops = jaccard_similarity(statement_no_stops, article_no_Stops)
         jaccard_no_stops_list += [jaccard_no_stops]
+        # computes USE similarity
 
     five_most_similar_raw = sorted(zip(jaccard_score_list, article_lemma_sentences), reverse=True)[:5]
     five_most_similar_no_stops = sorted(zip(jaccard_no_stops_list, article_lemma_sentences), reverse=True)[:5]
