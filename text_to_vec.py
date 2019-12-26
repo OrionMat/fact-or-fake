@@ -89,7 +89,6 @@ def get_similar_sentences(doc_statement, doc_article):
     statement_embedding = embed([doc_statement.text])
     statement_words = to_word_lemmas(doc_statement)
     statement_no_stops = remove_stop_words(statement_words)
-    article_lemma_sentences = []
     jaccard_score_list = []
     jaccard_no_stops_list = []
     USE_score_list = []
@@ -97,7 +96,6 @@ def get_similar_sentences(doc_statement, doc_article):
     for sentence in doc_article.sents:
         article_words = to_word_lemmas(sentence)
         article_no_Stops = remove_stop_words(article_words)
-        article_lemma_sentences += [article_words]
         # computes jaccard score for word lemmas
         jaccard_score = jaccard_similarity(statement_words, article_words)
         jaccard_score_list += [jaccard_score]
@@ -108,19 +106,9 @@ def get_similar_sentences(doc_statement, doc_article):
         USE_score = USE_similarity(statement_embedding, sentence.text)
         USE_score_list += [USE_score]
 
-    five_most_similar_raw = sorted(zip(jaccard_score_list, article_lemma_sentences), reverse=True)[:5]
-    five_most_similar_no_stops = sorted(zip(jaccard_no_stops_list, article_lemma_sentences), reverse=True)[:5]
-    five_most_similar_USE = sorted(zip(USE_score_list, article_lemma_sentences), reverse=True)[:5]
-
-    print("jaccard similar sentences:")
-    for idx in range(5):
-        print("raw ", idx, ": ", five_most_similar_raw[idx])
-        print("no stops ", idx, ": ", five_most_similar_no_stops[idx])
-        print("USE ", idx, ": ", five_most_similar_USE[idx])
-        print('\n')
-
-
-
+    compound_scores = np.sum([jaccard_score_list, jaccard_no_stops_list, USE_score_list], axis=0)
+    five_most_similar = sorted(zip(list(compound_scores), doc_article.sents), reverse=True)[:5]
+    return five_most_similar
 
 def check_prefix_negation(word, word_sentiment):
     """ checks internal negation from prefixes """
@@ -230,6 +218,7 @@ doc_article = nlp(article)
 
 #  get article's five most similar sentences to statement
 five_similar_sentences = get_similar_sentences(doc_statement, doc_article)
+print("5 similar: ", five_similar_sentences)
 
 # doc = nlp(""" Scarcely Barely barely kjashd
 #         couldn't can't aren't ain't isn't didn't won't 'wouldn't
