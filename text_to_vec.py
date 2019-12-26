@@ -70,8 +70,7 @@ def to_word_lemmas(sentence):
             word_list = list(filter(None, word_list))
     return word_list
 
-def get_similar_sentences(doc_statement, doc_article):
-    """ gets articles three most similar sentences to statment (lemmatized -> jaccard score) """
+def jaccard_similar_sentences(doc_statement, doc_article):
 
     statement_words = to_word_lemmas(doc_statement)
     statement_no_stops = remove_stop_words(statement_words)
@@ -97,6 +96,17 @@ def get_similar_sentences(doc_statement, doc_article):
         print("raw ", idx, ": ", five_most_similar_raw[idx])
         print("no stops ", idx, ": ", five_most_similar_no_stops[idx])
         print('\n')
+
+    return five_most_similar_raw, five_most_similar_no_stops
+
+def get_similar_sentences(doc_statement, doc_article):
+    """ gets articles five most similar sentences to statement 
+        1: lemmatized -> jaccard score
+        2: Universal Sentence Encoder 
+        weights similar sentences to get a compound similarity score"""
+
+    five_most_similar_raw, five_most_similar_no_stops = jaccard_similar_sentences(doc_statement, doc_article)
+
 
 def check_prefix_negation(word, word_sentiment):
     """ checks internal negation from prefixes """
