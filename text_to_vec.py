@@ -106,9 +106,14 @@ def get_similar_sentences(doc_statement, doc_article):
         USE_score = USE_similarity(statement_embedding, sentence.text)
         USE_score_list += [USE_score]
 
-    compound_scores = np.sum([jaccard_score_list, jaccard_no_stops_list, USE_score_list], axis=0)
+    # compute compund score from weighted scores and get top 5 sentences by compound score
+    jacc_score_array = np.array(jaccard_score_list)
+    jacc_no_stops_array = np.array(jaccard_no_stops_list)
+    USE_score_array = np.array(USE_score_list)
+    compound_scores = 0.25*jacc_score_array + 0.25*jacc_no_stops_array + 0.5*USE_score_array
     five_most_similar_zip = sorted(zip(list(compound_scores), doc_article.sents), reverse=True)[:5]
     _, five_most_similar = zip(*five_most_similar_zip)
+
     return five_most_similar
 
 def check_prefix_negation(word, word_sentiment):
